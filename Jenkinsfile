@@ -1,39 +1,52 @@
 pipeline {
-    agent { 
-        node {
-            label 'docker-agent-python'
-            }
-      }
-    triggers {
-        pollSCM '* * * * *'
+    agent {
+        label 'docker-agent-alpine'
+    }
+    options {
+        timeout(time: 20, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '3'))
     }
     stages {
         stage('Build') {
             steps {
-                echo "Building.."
-                sh '''
-                cd myapp
-                pip install -r requirements.txt
-                '''
+                script {
+                    docker.build("my_app:latest")
+                }
             }
         }
         stage('Test') {
             steps {
-                echo "Testing.."
-                sh '''
-                cd myapp
-                python3 hello.py
-                python3 hello.py --name=Brad
-                '''
+                script {
+                    docker.image("my_app:latest").inside {
+                        sh 'ls /var'
+                    }
+                }
             }
         }
-        stage('Deliver') {
-            steps {
-                echo 'Deliver....'
-                sh '''
-                echo "doing delivery stuff.."
-                '''
+        stage('Push docker') {
+            when {
+                expression {
+                    currentBuild.results == 'SUCCESS'
+                }
+                branch 'master'
             }
+            steps {
+                sh 'docker tag my_app:latest my_app:24.8'
+                sh 'docker images'
+            }
+        }
+        stage('Deploy') {
+            when {
+                branch 'master'
+            }
+            steps {
+                echo "deploying something to somewhere"
+            }
+        }
+    }
+    post {
+        always {
+            sh 'docker system prune -f'
         }
     }
 }
