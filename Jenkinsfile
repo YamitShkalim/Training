@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        label 'docker-agent-alpine'
+        label 'docker-agent-docker'
     }
     options {
         timeout(time: 20, unit: 'MINUTES')
