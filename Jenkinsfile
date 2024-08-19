@@ -1,8 +1,6 @@
 pipeline {
     agent {
-        node {
             label 'docker-agent-docker'
-        }
     }
     options {
         timeout(time: 20, unit: 'MINUTES')
